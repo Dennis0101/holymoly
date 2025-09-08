@@ -1,10 +1,11 @@
-// 잘못된 값: '../../../lib/auth'
-import { auth } from "../../lib/auth";          // ✅ src/app/admin → src/lib
+// src/app/admin/layout.tsx
+import { auth } from "@/lib/auth";
+import { redirect } from "next/navigation";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const session = await auth();           // ✅
-  if (!session || (session.user as any).role !== "ADMIN") {
-    return <div className="p-6">어드민 권한이 없습니다.</div>;
+  const session = await auth();
+  if (!session?.user || (session.user as any).role !== "ADMIN") {
+    redirect("/login?callbackUrl=/admin");
   }
-  return <div className="p-6">{children}</div>;
+  return <div className="mx-auto max-w-6xl px-4 py-6">{children}</div>;
 }
