@@ -1,88 +1,54 @@
-// src/app/admin/products/page.tsx
 export const revalidate = 0;
+// 필요하면 아래 라인으로 프리렌더 방지해도 됩니다.
+// export const dynamic = "force-dynamic";
 
 import prisma from "@/lib/prisma";
 import ProductEditor from "./product-editor";
+import ProductListClient from "./product-list-client";
 
 export default async function AdminProductsPage() {
-  const products = await prisma.product.findMany({
-    orderBy: { createdAt: "desc" },
-    include: {
-      _count: { select: { accounts: true } },
-    },
-  });
+  try {
+    // 1) 전체 상품 목록 + 총 계정 수(_count)
+    const products = await prisma.product.findMany({
+      orderBy: { createdAt: "desc" },
+      include: { _count: { select: { accounts: true } } },
+    });
 
-  const available = await prisma.account.groupBy({
-    by: ["productId"],
-    where: { isAllocated: false },
-    _count: { _all: true },
-  });
-  const availableMap = Object.fromEntries(
-    available.map((g) => [g.productId, g._count._all])
-  );
+    // 2) 각 상품의 "미할당(inventory)" 개수 (groupBy 대신 안전한 count 반복)
+    const ids = products.map((p) => p.id);
+    const availableCounts = await Promise.all(
+      ids.map((id) =>
+        prisma.account.count({ where: { productId: id, isAllocated: false } })
+      )
+    );
+    const availableMap = Object.fromEntries(
+      ids.map((id, i) => [id, availableCounts[i]])
+    );
 
-  return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-semibold text-white">상품 관리</h1>
+    const items = products.map((p) => ({
+      id: p.id,
+      name: p.name,
+      description: p.description,
+      price: p.price,
+      isActive: p.isActive,
+      totalAccounts: p._count.accounts,
+      available: availableMap[p.id] ?? 0,
+    }));
 
-      {/* 상품 생성/수정 UI */}
-      <ProductEditor />
-
-      <div className="grid gap-3">
-        {products.map((p) => {
-          const avail = availableMap[p.id] ?? 0;
-          return (
-            <div
-              key={p.id}
-              className="card p-4 flex items-center justify-between bg-base-800 border border-white/10"
-            >
-              <div>
-                <div className="font-medium text-white">
-                  {p.name}{" "}
-                  {!p.isActive && (
-                    <span className="text-xs text-red-400">(비활성)</span>
-                  )}
-                </div>
-                <div className="text-sm text-white/80 mt-1">
-                  <span className="font-medium text-neon-400">
-                    {p.price.toLocaleString()}원
-                  </span>{" "}
-                  · 미할당 재고:{" "}
-                  <span className="text-green-400">{avail}</span> · 총 계정:{" "}
-                  <span className="text-blue-400">{p._count.accounts}</span>
-                </div>
-                {p.description && (
-                  <div className="text-sm mt-2 text-white/70">
-                    {p.description}
-                  </div>
-                )}
-              </div>
-
-              <div className="flex gap-2">
-                <button
-                  className="btn-ghost text-red-400 hover:text-red-300"
-                  onClick={async () => {
-                    const ok = confirm("정말 삭제할까요?");
-                    if (!ok) return;
-                    await fetch(`/api/admin/products?id=${p.id}`, {
-                      method: "DELETE",
-                    });
-                    location.reload();
-                  }}
-                >
-                  삭제
-                </button>
-              </div>
-            </div>
-          );
-        })}
-
-        {products.length === 0 && (
-          <div className="panel text-white/70">
-            상품이 없습니다. 위에서 추가하세요.
-          </div>
-        )}
+    return (
+      <div className="space-y-6">
+        <h1 className="text-2xl font-semibold text-white">상품 관리</h1>
+        <ProductEditor />
+        <ProductListClient items={items} />
       </div>
-    </div>
-  );
+    );
+  } catch (err) {
+    // 서버에서 에러가 나도 전체 500로 무너지는 걸 막아줌
+    console.error("[admin/products] page error:", err);
+    return (
+      <div className="panel text-red-300">
+        상품 페이지를 불러오는 중 오류가 발생했습니다.
+      </div>
+    );
+  }
 }
