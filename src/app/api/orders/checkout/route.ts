@@ -1,9 +1,11 @@
+// 상단 임포트 전부 교체
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-import prisma from "@/lib/prisma";
-import { sendDiscordPurchaseLog } from "@/lib/discord";
+import { authOptions } from "../../../../../lib/auth";
+import prisma from "../../../../../lib/prisma";
+import { sendDiscordPurchaseLog } from "../../../../../lib/discord";
 
+// 이하 기존 코드 그대로…
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session?.user) {
@@ -26,7 +28,6 @@ export async function POST(req: NextRequest) {
       });
       if (!account) throw new Error("NO_STOCK");
 
-      // 주문 생성
       const order = await tx.order.create({
         data: {
           userId: user.id,
@@ -36,7 +37,6 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      // 계정 할당 + 잔액 차감 + 주문 상태 갱신
       await tx.account.update({
         where: { id: account.id },
         data: { isAllocated: true, allocatedAt: new Date(), allocatedToId: user.id, order: { connect: { id: order.id } } },
@@ -54,7 +54,6 @@ export async function POST(req: NextRequest) {
       return { order: final, user };
     });
 
-    // 디스코드 알림 (실패해도 주문은 성공 상태 유지)
     await sendDiscordPurchaseLog({
       userId: result.user.id,
       userEmail: result.user.email ?? undefined,
