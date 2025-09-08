@@ -6,17 +6,20 @@ export async function sendDiscordPurchaseLog(payload: {
   productName: string;
   orderId: string;
   price?: number;
-  accountId?: string;   // 계정 아이디도 보여주고 싶으면
-  imageUrl?: string;    // 상품 이미지 있으면
+  accountId?: string;
+  imageUrl?: string;      // 전달되면 우선 사용
+  thumbnailUrl?: string;
 }) {
   const setting = await prisma.setting.findUnique({ where: { id: 1 } });
   const url = setting?.discordWebhookUrl || process.env.DISCORD_DEFAULT_WEBHOOK;
   if (!url) return;
 
+  const imageUrl = payload.imageUrl || setting?.discordImageUrl || undefined;
+
   const embed = {
     title: "✨ 구매 완료 ✨",
     description: "구매해주셔서 감사합니다 😊",
-    color: 0x3b82f6, // 파랑색
+    color: 0x3b82f6,
     timestamp: new Date().toISOString(),
     fields: [
       { name: "구매자", value: payload.userEmail ?? payload.userId, inline: false },
@@ -25,15 +28,14 @@ export async function sendDiscordPurchaseLog(payload: {
       { name: "주문 ID", value: payload.orderId, inline: true },
       ...(payload.accountId ? [{ name: "아이디", value: payload.accountId, inline: false }] : []),
     ],
-    thumbnail: payload.imageUrl ? { url: payload.imageUrl } : undefined,
+    thumbnail: payload.thumbnailUrl ? { url: payload.thumbnailUrl } : undefined,
+    image: imageUrl ? { url: imageUrl } : undefined,   // 👈 크게 표시
     footer: { text: "Account Shop" },
   };
 
   await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      embeds: [embed],
-    }),
+    body: JSON.stringify({ embeds: [embed] }),
   });
 }
