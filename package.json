@@ -5,8 +5,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start -p $PORT",
-    "postinstall": "prisma generate && prisma db push --accept-data-loss"
+    "start": "prisma migrate deploy || prisma db push --accept-data-loss; next start -p $PORT",
+    "postinstall": "prisma generate"
   },
   "dependencies": {
     "next": "14.2.5",
