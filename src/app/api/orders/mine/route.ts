@@ -1,15 +1,16 @@
+// src/app/api/orders/mine/route.ts
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "../../../../lib/auth";
+import { auth } from "../../../../lib/auth";   // ✅ v5: auth()
 import prisma from "../../../../lib/prisma";
 
 export async function GET() {
-  const session = await getServerSession(authOptions);
+  const session = await auth();               // ✅ getServerSession → auth()
   if (!session?.user) {
     return NextResponse.json({ error: "UNAUTH" }, { status: 401 });
   }
 
   const userId = (session.user as any).id as string;
+
   const orders = await prisma.order.findMany({
     where: { userId },
     orderBy: { createdAt: "desc" },
