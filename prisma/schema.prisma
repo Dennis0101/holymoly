@@ -28,12 +28,15 @@ enum TopupStatus {
 model User {
   id        String   @id @default(cuid())
   email     String   @unique
-  password  String?  // 해시 저장
+  password  String?
   name      String?
   role      Role     @default(USER)
   balance   Int      @default(0)
   orders    Order[]
   topups    Topup[]
+  // 계정(인벤토리) 할당 받은 기록
+  allocatedAccounts Account[] @relation("AllocatedToUser")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -44,42 +47,62 @@ model Product {
   description String?
   price       Int
   isActive    Boolean  @default(true)
+
   accounts    Account[]
-  orders      Order[]     // ← 추가: Product ↔ Order 역방향
+  orders      Order[]       // Product ↔ Order
+
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
 
 model Account {
   id            String   @id @default(cuid())
+
   productId     String
   product       Product  @relation(fields: [productId], references: [id])
+
   username      String
   passwordEnc   String
+
   isAllocated   Boolean  @default(false)
   allocatedAt   DateTime?
+
+  // 어떤 유저에게 할당되었는지 (선택)
   allocatedToId String?
-  order         Order?     // ← 추가: Account ↔ Order 역방향 (1:1)
+  allocatedTo   User?    @relation("AllocatedToUser", fields: [allocatedToId], references: [id])
+
+  // 주문과 1:1 연결
+  order         Order?
+
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
+  // 🔒 같은 상품(productId) 안에서는 같은 username을 중복 등록 금지
+  @@unique([productId, username])
+
   @@index([productId, isAllocated])
+  @@index([allocatedToId])
 }
 
 model Order {
   id          String      @id @default(cuid())
+
   userId      String
   user        User        @relation(fields: [userId], references: [id])
+
   productId   String
   product     Product     @relation(fields: [productId], references: [id])
+
   status      OrderStatus @default(PENDING)
   price       Int
+
   accountId   String?
   account     Account?    @relation(fields: [accountId], references: [id])
+
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 
-  // (선택) 하나의 Account가 여러 주문에 중복 연결되지 않도록 보장
+  // 하나의 Account가 여러 주문에 중복 연결되지 않도록
   @@unique([accountId])
 }
 
