@@ -1,64 +1,76 @@
 // src/app/admin/products/page.tsx
-export const revalidate = 0; // 항상 최신 데이터
-export const dynamic = "force-dynamic"; // 매 요청 새로
+export const revalidate = 0;
+
 import prisma from "@/lib/prisma";
-import ProductRow from "./product-row";
 import ProductEditor from "./product-editor";
 
 export default async function AdminProductsPage() {
-  // 상품 목록
+  // 1) 상품 목록(총 재고 수만 _count로)
   const products = await prisma.product.findMany({
     orderBy: { createdAt: "desc" },
-    select: { id: true, name: true, description: true, price: true, isActive: true, createdAt: true },
+    include: {
+      _count: { select: { accounts: true } }, // ✅ where 불가(총 개수만)
+    },
   });
 
-  // 미할당 재고 카운트 (1쿼리로 groupBy)
-  const stock = await prisma.account.groupBy({
+  // 2) 미할당 재고 수는 별도로 groupBy로 계산
+  const available = await prisma.account.groupBy({
     by: ["productId"],
     where: { isAllocated: false },
     _count: { _all: true },
   });
-  const stockMap = new Map(stock.map(s => [s.productId, s._count._all]));
+  const availableMap = Object.fromEntries(
+    available.map((g) => [g.productId, g._count._all])
+  );
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-3">
-        <h1 className="text-2xl font-semibold">상품 관리</h1>
-        <a href="/admin/inventory" className="btn-ghost">인벤토리로 이동</a>
-      </div>
+      <h1 className="text-2xl font-semibold">상품 관리</h1>
 
-      {/* 신규 상품 생성 폼 (기존 컴포넌트) */}
+      {/* 상품 생성/수정 UI */}
       <ProductEditor />
 
-      {/* 검색 입력 */}
-      <form className="sm:w-80">
-        <input
-          name="q"
-          placeholder="상품명 검색…"
-          className="input"
-          defaultValue=""
-          onChange={(e) => {
-            const v = e.currentTarget.value.toLowerCase();
-            document.querySelectorAll<HTMLElement>("[data-row-name]").forEach(el => {
-              const name = el.dataset.rowName!.toLowerCase();
-              el.style.display = name.includes(v) ? "" : "none";
-            });
-          }}
-        />
-      </form>
-
       <div className="grid gap-3">
-        {products.map(p => (
-          <ProductRow
-            key={p.id}
-            product={{
-              ...p,
-              stock: stockMap.get(p.id) ?? 0,
-            }}
-          />
-        ))}
+        {products.map((p) => {
+          const avail = availableMap[p.id] ?? 0;
+          return (
+            <div key={p.id} className="card p-4 flex items-center justify-between">
+              <div>
+                <div className="font-medium">
+                  {p.name}{" "}
+                  {!p.isActive && (
+                    <span className="text-xs text-red-500">(비활성)</span>
+                  )}
+                </div>
+                <div className="text-sm text-white/60">
+                  가격: {p.price.toLocaleString()}원 · 재고(미할당): {avail} · 총계정: {p._count.accounts}
+                </div>
+                {p.description && (
+                  <div className="text-sm mt-1">{p.description}</div>
+                )}
+              </div>
+
+              <div className="flex gap-2">
+                <button
+                  className="btn-ghost"
+                  onClick={async () => {
+                    const ok = confirm("정말 삭제할까요?");
+                    if (!ok) return;
+                    await fetch(`/api/admin/products?id=${p.id}`, {
+                      method: "DELETE",
+                    });
+                    location.reload();
+                  }}
+                >
+                  삭제
+                </button>
+              </div>
+            </div>
+          );
+        })}
+
         {products.length === 0 && (
-          <div className="card text-white/70">등록된 상품이 없습니다. 상단에서 추가하세요.</div>
+          <div className="panel text-white/70">상품이 없습니다. 위에서 추가하세요.</div>
         )}
       </div>
     </div>
