@@ -17,6 +17,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             <Link href="/admin/products" className="btn-ghost">상품</Link>
             <Link href="/admin/inventory" className="btn-ghost">인벤토리</Link>
             <Link href="/admin/orders" className="btn-ghost">주문</Link>
+            <a href="/admin/topups" className="nav-link">충전 승인</a>
             <Link href="/admin/settings" className="btn-ghost">설정</Link>
           </nav>
         </div>
