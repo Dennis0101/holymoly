@@ -1,0 +1,82 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role { USER ADMIN }
+enum OrderStatus { PENDING PAID FULFILLED CANCELED }
+enum TopupStatus { REQUESTED APPROVED REJECTED }
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String?  // 해시 저장
+  name      String?
+  role      Role     @default(USER)
+  balance   Int      @default(0)
+  orders    Order[]
+  topups    Topup[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  price       Int
+  isActive    Boolean  @default(true)
+  accounts    Account[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Account {
+  id            String   @id @default(cuid())
+  productId     String
+  product       Product  @relation(fields: [productId], references: [id])
+  username      String
+  passwordEnc   String
+  isAllocated   Boolean  @default(false)
+  allocatedAt   DateTime?
+  allocatedToId String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([productId, isAllocated])
+}
+
+model Order {
+  id          String      @id @default(cuid())
+  userId      String
+  user        User        @relation(fields: [userId], references: [id])
+  productId   String
+  product     Product     @relation(fields: [productId], references: [id])
+  status      OrderStatus @default(PENDING)
+  price       Int
+  accountId   String?
+  account     Account?    @relation(fields: [accountId], references: [id])
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+model Topup {
+  id          String      @id @default(cuid())
+  userId      String
+  user        User        @relation(fields: [userId], references: [id])
+  amount      Int
+  status      TopupStatus @default(REQUESTED)
+  memo        String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+model Setting {
+  id        Int      @id @default(1)
+  discordWebhookUrl String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
