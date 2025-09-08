@@ -1,16 +1,24 @@
-// src/app/api/orders/checkout/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "../../../../lib/auth";                     // ✅ v5: auth()
-import prisma from "../../../../lib/prisma";
-import { sendDiscordPurchaseLog } from "../../../../lib/discord";
+import prisma from "@/lib/prisma";
+import { auth } from "@/lib/auth";
+import { sendDiscordPurchaseLog } from "@/lib/discord";
 
 export async function POST(req: NextRequest) {
-  const session = await auth();                                  // ✅ getServerSession → auth()
-  if (!session?.user) {
-    return NextResponse.json({ error: "UNAUTH" }, { status: 401 });
+  const session = await auth();
+  if (!session?.user) return NextResponse.json({ error: "UNAUTH" }, { status: 401 });
+
+  const contentType = req.headers.get("content-type") || "";
+  let productId: string | undefined;
+
+  if (contentType.includes("application/json")) {
+    const body = await req.json();
+    productId = body?.productId;
+  } else {
+    const form = await req.formData();
+    productId = String(form.get("productId") || "");
   }
 
-  const { productId } = await req.json();
+  if (!productId) return NextResponse.json({ error: "NO_PRODUCT" }, { status: 400 });
 
   try {
     const result = await prisma.$transaction(async (tx) => {
@@ -28,22 +36,12 @@ export async function POST(req: NextRequest) {
       if (!account) throw new Error("NO_STOCK");
 
       const order = await tx.order.create({
-        data: {
-          userId: user.id,
-          productId: product.id,
-          status: "PAID",
-          price: product.price,
-        },
+        data: { userId: user.id, productId: product.id, status: "PAID", price: product.price },
       });
 
       await tx.account.update({
         where: { id: account.id },
-        data: {
-          isAllocated: true,
-          allocatedAt: new Date(),
-          allocatedToId: user.id,
-          order: { connect: { id: order.id } },
-        },
+        data: { isAllocated: true, allocatedAt: new Date(), allocatedToId: user.id, order: { connect: { id: order.id } } },
       });
 
       await tx.user.update({
@@ -60,7 +58,7 @@ export async function POST(req: NextRequest) {
       return { order: final, user };
     });
 
-    // 디스코드 알림 (실패해도 주문은 성공 상태 유지)
+    // 디스코드 로그 (실패해도 무시)
     await sendDiscordPurchaseLog({
       userId: result.user.id,
       userEmail: result.user.email ?? undefined,
@@ -68,8 +66,15 @@ export async function POST(req: NextRequest) {
       orderId: result.order.id,
     }).catch(() => {});
 
-    return NextResponse.json({ ok: true, orderId: result.order.id });
+    return NextResponse.redirect(new URL("/orders", req.url));
   } catch (e: any) {
-    return NextResponse.json({ error: e?.message || "ERROR" }, { status: 400 });
+    const msg = e?.message || "ERROR";
+    const map: any = {
+      NO_PRODUCT: "존재하지 않는 상품입니다.",
+      NO_USER: "유저를 찾을 수 없습니다.",
+      NO_BALANCE: "잔액이 부족합니다.",
+      NO_STOCK: "재고가 없습니다.",
+    };
+    return NextResponse.json({ error: map[msg] ?? "구매 실패" }, { status: 400 });
   }
 }
