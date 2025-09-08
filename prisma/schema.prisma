@@ -120,6 +120,7 @@ model Topup {
 model Setting {
   id                Int      @id @default(1)
   discordWebhookUrl String?
+  discordImageUrl   String?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 }
