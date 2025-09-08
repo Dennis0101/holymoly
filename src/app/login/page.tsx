@@ -1,74 +1,57 @@
 "use client";
 import { useState } from "react";
 import { signIn } from "next-auth/react";
+import SuccessOverlay from "../../components/SuccessOverlay";
 
-export default function LoginForm() {
+export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [success, setSuccess] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setSubmitting(true);
+    setErrorMsg(null);
 
-    const res = await signIn("credentials", {
-      redirect: false,
-      email,
-      password,
-    });
+    const res = await signIn("credentials", { redirect: false, email, password });
+    setSubmitting(false);
 
-    if (!res?.error) {
-      // ✅ 성공 애니메이션 실행
-      setSuccess(true);
-
-      // 1.5초 뒤 페이지 이동
-      setTimeout(() => {
-        window.location.href = "/dashboard"; // 원하는 경로
-      }, 1500);
+    if (res?.error) {
+      setErrorMsg(res.error === "CredentialsSignin" ? "이메일 또는 비밀번호가 올바르지 않습니다." : res.error);
+      return;
     }
-  };
+    setSuccess(true);
+    setTimeout(() => (window.location.href = "/"), 1200);
+  }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-base-900">
-      <form
-        onSubmit={handleSubmit}
-        className="panel w-full max-w-sm space-y-4 relative"
-      >
+    <div className="flex min-h-screen items-center justify-center bg-base-900 px-4">
+      <form onSubmit={handleSubmit} className="panel relative w-full max-w-sm space-y-4">
         <h1 className="text-xl font-semibold text-center">계정 로그인</h1>
 
-        <input
-          type="email"
-          placeholder="이메일"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          className="input"
-        />
-        <input
-          type="password"
-          placeholder="비밀번호"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          className="input"
-        />
-
-        <button type="submit" className="btn-primary w-full">
-          로그인
-        </button>
-
-        {/* ✅ 성공 애니메이션 */}
-        {success && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/70 backdrop-blur-sm rounded-2xl animate-fade">
-            <div className="flex flex-col items-center space-y-2">
-              <div className="w-12 h-12 rounded-full bg-green-500 flex items-center justify-center animate-bounce">
-                ✅
-              </div>
-              <p className="text-green-400 font-medium animate-pulse">
-                로그인 성공!
-              </p>
-            </div>
+        {errorMsg && (
+          <div className="rounded-md bg-red-500/15 border border-red-500/30 text-red-300 text-sm px-3 py-2">
+            {errorMsg}
           </div>
         )}
+
+        <div>
+          <label className="block text-sm mb-1 text-white/80">이메일</label>
+          <input className="input" type="email" value={email} onChange={e=>setEmail(e.target.value)} required />
+        </div>
+        <div>
+          <label className="block text-sm mb-1 text-white/80">비밀번호</label>
+          <input className="input" type="password" value={password} onChange={e=>setPassword(e.target.value)} required />
+        </div>
+
+        <button type="submit" disabled={submitting} className="btn-primary w-full">
+          {submitting ? "로그인 중..." : "로그인"}
+        </button>
+
+        {/* ✅ 성공 애니메이션 오버레이 */}
+        <SuccessOverlay show={success} />
       </form>
     </div>
   );
