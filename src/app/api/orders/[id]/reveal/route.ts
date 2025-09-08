@@ -1,6 +1,6 @@
+// src/app/api/orders/[id]/reveal/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "../../../../../lib/auth";
+import { auth } from "../../../../../lib/auth";     // ✅ v5
 import prisma from "../../../../../lib/prisma";
 import { decrypt } from "../../../../../lib/crypto";
 
@@ -8,7 +8,7 @@ export async function GET(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const session = await getServerSession(authOptions);
+  const session = await auth();                     // ✅
   if (!session?.user) {
     return NextResponse.json({ error: "UNAUTH" }, { status: 401 });
   }
