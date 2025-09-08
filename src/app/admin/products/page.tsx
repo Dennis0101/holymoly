@@ -5,15 +5,13 @@ import prisma from "@/lib/prisma";
 import ProductEditor from "./product-editor";
 
 export default async function AdminProductsPage() {
-  // 1) 상품 목록(총 재고 수만 _count로)
   const products = await prisma.product.findMany({
     orderBy: { createdAt: "desc" },
     include: {
-      _count: { select: { accounts: true } }, // ✅ where 불가(총 개수만)
+      _count: { select: { accounts: true } },
     },
   });
 
-  // 2) 미할당 재고 수는 별도로 groupBy로 계산
   const available = await prisma.account.groupBy({
     by: ["productId"],
     where: { isAllocated: false },
@@ -25,7 +23,7 @@ export default async function AdminProductsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold">상품 관리</h1>
+      <h1 className="text-2xl font-semibold text-white">상품 관리</h1>
 
       {/* 상품 생성/수정 UI */}
       <ProductEditor />
@@ -34,25 +32,35 @@ export default async function AdminProductsPage() {
         {products.map((p) => {
           const avail = availableMap[p.id] ?? 0;
           return (
-            <div key={p.id} className="card p-4 flex items-center justify-between">
+            <div
+              key={p.id}
+              className="card p-4 flex items-center justify-between bg-base-800 border border-white/10"
+            >
               <div>
-                <div className="font-medium">
+                <div className="font-medium text-white">
                   {p.name}{" "}
                   {!p.isActive && (
-                    <span className="text-xs text-red-500">(비활성)</span>
+                    <span className="text-xs text-red-400">(비활성)</span>
                   )}
                 </div>
-                <div className="text-sm text-white/60">
-                  가격: {p.price.toLocaleString()}원 · 재고(미할당): {avail} · 총계정: {p._count.accounts}
+                <div className="text-sm text-white/80 mt-1">
+                  <span className="font-medium text-neon-400">
+                    {p.price.toLocaleString()}원
+                  </span>{" "}
+                  · 미할당 재고:{" "}
+                  <span className="text-green-400">{avail}</span> · 총 계정:{" "}
+                  <span className="text-blue-400">{p._count.accounts}</span>
                 </div>
                 {p.description && (
-                  <div className="text-sm mt-1">{p.description}</div>
+                  <div className="text-sm mt-2 text-white/70">
+                    {p.description}
+                  </div>
                 )}
               </div>
 
               <div className="flex gap-2">
                 <button
-                  className="btn-ghost"
+                  className="btn-ghost text-red-400 hover:text-red-300"
                   onClick={async () => {
                     const ok = confirm("정말 삭제할까요?");
                     if (!ok) return;
@@ -70,7 +78,9 @@ export default async function AdminProductsPage() {
         })}
 
         {products.length === 0 && (
-          <div className="panel text-white/70">상품이 없습니다. 위에서 추가하세요.</div>
+          <div className="panel text-white/70">
+            상품이 없습니다. 위에서 추가하세요.
+          </div>
         )}
       </div>
     </div>
