@@ -1,7 +1,9 @@
 "use client";
-import { useEffect, useState } from "react";
 
 export const revalidate = 0; // 또는: export const dynamic = "force-dynamic";
+
+import { useEffect, useState } from "react";
+
 
 type Row = { id: string; username: string; isAllocated: boolean; allocatedAt?: string | null; product?: { name: string } };
 type Product = { id: string; name: string };
