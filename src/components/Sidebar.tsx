@@ -9,33 +9,40 @@ const items = [
   { href: "/profile", label: "내 프로필" },
 ];
 
+const admin = [
+  { href: "/admin", label: "어드민 홈" },
+  { href: "/admin/products", label: "상품관리" },
+  { href: "/admin/inventory", label: "인벤토리" },
+  { href: "/admin/orders", label: "주문관리" },
+  { href: "/admin/settings", label: "설정" },
+];
+
 export default function Sidebar() {
   const pathname = usePathname();
+
+  const Nav = ({ href, label }: { href: string; label: string }) => {
+    const active = pathname === href || pathname.startsWith(href + "/");
+    return (
+      <Link
+        href={href}
+        className={`block rounded-md px-3 py-2 text-sm transition
+          ${active ? "bg-indigo-600 text-white" : "text-gray-700 hover:bg-gray-100"}`}
+      >
+        {label}
+      </Link>
+    );
+  };
+
   return (
-    <aside className="w-60 border-r h-screen sticky top-0 p-4">
-      <div className="text-xl font-bold mb-6">Account Shop</div>
-      <nav className="space-y-2">
-        {items.map((i) => (
-          <Link
-            key={i.href}
-            href={i.href}
-            className={`block rounded px-3 py-2 ${
-              pathname === i.href
-                ? "bg-gray-100 font-medium"
-                : "hover:bg-gray-50"
-            }`}
-          >
-            {i.label}
-          </Link>
-        ))}
-        <hr className="my-4" />
-        <Link
-          href="/admin"
-          className="block text-sm text-gray-500 hover:text-gray-800"
-        >
-          어드민
-        </Link>
-      </nav>
+    <aside className="sticky top-0 hidden h-screen w-64 flex-col gap-2 border-r bg-white p-4 md:flex">
+      <div className="mb-2 text-lg font-bold">Account Shop</div>
+      <div className="space-y-1">
+        {items.map((it) => <Nav key={it.href} {...it} />)}
+      </div>
+      <div className="mt-6 text-xs font-semibold uppercase text-gray-400">Admin</div>
+      <div className="space-y-1">
+        {admin.map((it) => <Nav key={it.href} {...it} />)}
+      </div>
     </aside>
   );
 }
