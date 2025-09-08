@@ -1,4 +1,3 @@
-// src/app/register/RegisterForm.tsx
 "use client";
 
 import { useState } from "react";
@@ -103,7 +102,6 @@ export default function RegisterForm() {
         </p>
       </form>
 
-      {/* 성공 팝업 */}
       <AnimatePresence>
         {success && (
           <motion.div
