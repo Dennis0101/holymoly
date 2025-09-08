@@ -1,11 +1,9 @@
-// 상단 임포트 전부 교체
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { authOptions } from "../../../../../lib/auth";
-import prisma from "../../../../../lib/prisma";
-import { sendDiscordPurchaseLog } from "../../../../../lib/discord";
+import { authOptions } from "../../../../lib/auth";
+import prisma from "../../../../lib/prisma";
+import { sendDiscordPurchaseLog } from "../../../../lib/discord";
 
-// 이하 기존 코드 그대로…
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session?.user) {
@@ -39,7 +37,12 @@ export async function POST(req: NextRequest) {
 
       await tx.account.update({
         where: { id: account.id },
-        data: { isAllocated: true, allocatedAt: new Date(), allocatedToId: user.id, order: { connect: { id: order.id } } },
+        data: {
+          isAllocated: true,
+          allocatedAt: new Date(),
+          allocatedToId: user.id,
+          order: { connect: { id: order.id } },
+        },
       });
       await tx.user.update({
         where: { id: user.id },
@@ -63,7 +66,6 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ ok: true, orderId: result.order.id });
   } catch (e: any) {
-    const msg = e?.message || "ERROR";
-    return NextResponse.json({ error: msg }, { status: 400 });
+    return NextResponse.json({ error: e?.message || "ERROR" }, { status: 400 });
   }
 }
