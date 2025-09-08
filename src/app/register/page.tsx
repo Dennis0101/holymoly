@@ -1,6 +1,5 @@
-// src/app/register/page.tsx
 import AuthShell from "../(auth)/AuthShell";
-import RegisterForm from "./RegisterForm";
+import RegisterForm from "./register-form"; // ← 파일명과 일치!
 
 export const metadata = { title: "회원가입 - Account Shop" };
 
