@@ -12,7 +12,7 @@ const creds = z.object({
 
 export const { auth, signIn, signOut, handlers } = NextAuth({
   session: { strategy: "jwt" },
-  pages: { signIn: "/login", error: "/login" }, // 커스텀 페이지 경로
+  pages: { signIn: "/login", error: "/login" },
   providers: [
     Credentials({
       name: "Email & Password",
@@ -20,12 +20,20 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
       async authorize(c) {
         const s = creds.safeParse(c);
         if (!s.success) return null;
+
         const { email, password } = s.data;
         const user = await prisma.user.findUnique({ where: { email } });
         if (!user || !user.password) return null;
+
         const ok = await compare(password, user.password);
         if (!ok) return null;
-        return { id: user.id, email: user.email, name: user.name ?? undefined, role: user.role } as any;
+
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.name ?? undefined,
+          role: user.role,
+        } as any;
       },
     }),
   ],
@@ -46,3 +54,6 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
     },
   },
 });
+
+// ✅ route.ts에서 바로 재노출할 수 있도록 추가
+export const { GET, POST } = handlers;
