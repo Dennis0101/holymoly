@@ -1,88 +1,36 @@
-"use client";
-import { useEffect, useState } from "react";
+import prisma from "@/lib/prisma";
+import { auth } from "@/lib/auth";
 
-type OrderItem = {
-  id: string;
-  status: string;
-  price: number;
-  createdAt: string;
-  product: { name: string; price: number };
-  account?: { id: string; username: string | null; isAllocated: boolean };
-};
+export const revalidate = 0;
 
-export default function OrdersPage() {
-  const [items, setItems] = useState<OrderItem[]>([]);
-  const [reveal, setReveal] = useState<{ [k:string]: { u:string; p:string } }>({});
-  const [loading, setLoading] = useState<string | null>(null);
+export default async function OrdersPage() {
+  const session = await auth();
+  if (!session?.user) return <div className="panel">로그인이 필요합니다.</div>;
+  const userId = (session.user as any).id as string;
 
-  const load = async () => {
-    const r = await fetch("/api/orders/mine");
-    const j = await r.json();
-    setItems(j.items || []);
-  };
-
-  useEffect(()=>{ load(); }, []);
-
-  const onReveal = async (id: string) => {
-    setLoading(id);
-    try {
-      const r = await fetch(`/api/orders/${id}/reveal`);
-      const j = await r.json();
-      if (!r.ok) throw new Error(j.error || "REVEAL_FAIL");
-      setReveal(prev => ({ ...prev, [id]: { u: j.username, p: j.password } }));
-    } catch (e:any) {
-      alert(e.message);
-    } finally {
-      setLoading(null);
-    }
-  };
+  const orders = await prisma.order.findMany({
+    where: { userId },
+    orderBy: { createdAt: "desc" },
+    include: { product: { select: { name: true, price: true } }, account: { select: { id: true, username: true } } },
+  });
 
   return (
-    <div>
-      <h1 className="text-2xl font-semibold mb-4">구매내역</h1>
-      <div className="border rounded">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="bg-gray-50">
-              <th className="text-left p-2">상품</th>
-              <th className="text-left p-2">상태</th>
-              <th className="text-left p-2">가격</th>
-              <th className="text-left p-2">일시</th>
-              <th className="text-left p-2">계정정보</th>
-            </tr>
-          </thead>
-          <tbody>
-            {items.map(o => (
-              <tr key={o.id} className="border-t">
-                <td className="p-2">{o.product?.name ?? "-"}</td>
-                <td className="p-2">{o.status}</td>
-                <td className="p-2">{o.price}</td>
-                <td className="p-2">{new Date(o.createdAt).toLocaleString()}</td>
-                <td className="p-2">
-                  {reveal[o.id] ? (
-                    <div className="space-y-1">
-                      <div><b>ID:</b> {reveal[o.id].u}</div>
-                      <div><b>PW:</b> {reveal[o.id].p}</div>
-                    </div>
-                  ) : o.account?.isAllocated ? (
-                    <button
-                      className="px-2 py-1 border rounded hover:bg-gray-50 disabled:opacity-50"
-                      disabled={loading===o.id}
-                      onClick={()=>onReveal(o.id)}
-                    >
-                      {loading===o.id ? "불러오는 중..." : "계정정보 보기"}
-                    </button>
-                  ) : (
-                    <span className="text-gray-500">준비중</span>
-                  )}
-                </td>
-              </tr>
-            ))}
-            {!items.length && (
-              <tr><td colSpan={5} className="p-4 text-center text-gray-500">주문이 없습니다.</td></tr>
-            )}
-          </tbody>
-        </table>
+    <div className="space-y-4">
+      <h1 className="text-2xl font-semibold">구매내역</h1>
+      <div className="space-y-2">
+        {orders.map((o) => (
+          <div key={o.id} className="card p-4 flex items-center justify-between">
+            <div>
+              <div className="font-medium">{o.product.name}</div>
+              <div className="text-xs text-white/60">
+                {new Date(o.createdAt).toLocaleString()} · {o.status}
+              </div>
+              <div className="text-sm mt-1">아이디: {o.account?.username ?? "-"}</div>
+            </div>
+            <div className="font-semibold">{o.price.toLocaleString()} 원</div>
+          </div>
+        ))}
+        {orders.length === 0 && <div className="panel text-white/60">구매한 항목이 없습니다.</div>}
       </div>
     </div>
   );
