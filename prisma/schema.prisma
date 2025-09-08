@@ -2,13 +2,28 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
 generator client {
   provider = "prisma-client-js"
 }
 
-enum Role { USER ADMIN }
-enum OrderStatus { PENDING PAID FULFILLED CANCELED }
-enum TopupStatus { REQUESTED APPROVED REJECTED }
+enum Role {
+  USER
+  ADMIN
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  FULFILLED
+  CANCELED
+}
+
+enum TopupStatus {
+  REQUESTED
+  APPROVED
+  REJECTED
+}
 
 model User {
   id        String   @id @default(cuid())
@@ -75,8 +90,8 @@ model Topup {
 }
 
 model Setting {
-  id        Int      @id @default(1)
+  id                Int      @id @default(1)
   discordWebhookUrl String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 }
