@@ -1,8 +1,24 @@
-export default function DashboardPage() {
+import prisma from "@/lib/prisma";
+import Shop from "./shop";
+
+export default async function DashboardPage() {
+  const products = await prisma.product.findMany({
+    where: { isActive: true },
+    orderBy: { createdAt: "desc" },
+    include: {
+      _count: { select: { accounts: { where: { isAllocated: false } } } },
+    },
+  });
+
   return (
-    <div>
-      <h1 className="text-2xl font-semibold mb-4">대시보드</h1>
-      <p>여기에 요약(잔액, 최근 구매내역 등)을 보여줄 수 있습니다.</p>
+    <div className="space-y-6">
+      <h1 className="text-2xl font-semibold">대시보드</h1>
+      <Shop products={products.map(p => ({
+        id: p.id,
+        name: p.name,
+        price: p.price,
+        stock: p._count.accounts
+      }))} />
     </div>
   );
 }
