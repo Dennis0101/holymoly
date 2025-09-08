@@ -2,7 +2,8 @@
 import type { NextAuthOptions } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { compare } from "bcrypt";
-import prisma from "@/lib/prisma";
+// 기존: import prisma from "@/lib/prisma";
+import prisma from "./prisma";
 import { z } from "zod";
 
 const credsSchema = z.object({
