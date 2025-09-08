@@ -1,27 +1,41 @@
-import crypto from "crypto";
+// src/lib/crypto.ts
+const B64 = (s: string) => Buffer.from(s, "base64");
 
-const keyHex = process.env.ACCOUNT_ENC_KEY;
-if (!keyHex) {
-  // 개발/로컬에서만 경고. 배포에서는 꼭 설정하세요.
-  console.warn("ACCOUNT_ENC_KEY is not set. Account encryption will fail.");
+function getKey(): Buffer {
+  const raw = process.env.ACCOUNT_CIPHER_KEY || process.env.CRYPTO_SECRET;
+  if (!raw) {
+    // 업로드 API에서 이 메세지를 그대로 보여줍니다.
+    throw new Error("어카운트 KEY가 없습니다");
+  }
+  const key = B64(raw);
+  if (key.length !== 32) {
+    throw new Error("INVALID_CRYPTO_KEY_LENGTH"); // 32바이트 필요(AES-256)
+  }
+  return key;
 }
-const key = keyHex ? Buffer.from(keyHex, "hex") : crypto.randomBytes(32); // fallback (dev)
 
-export function encrypt(text: string) {
-  const iv = crypto.randomBytes(12);
-  const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);
-  const enc = Buffer.concat([cipher.update(text, "utf8"), cipher.final()]);
+export function encrypt(plain: string): string {
+  const key = getKey();
+  const iv = crypto.getRandomValues(new Uint8Array(12)); // GCM 권장
+  const cipher = require("crypto").createCipheriv("aes-256-gcm", key, iv);
+  const enc = Buffer.concat([cipher.update(plain, "utf8"), cipher.final()]);
   const tag = cipher.getAuthTag();
-  return Buffer.concat([iv, tag, enc]).toString("base64");
+  // 포맷: base64(iv).base64(tag).base64(cipherText)
+  return [
+    Buffer.from(iv).toString("base64"),
+    tag.toString("base64"),
+    enc.toString("base64"),
+  ].join(".");
 }
 
-export function decrypt(b64: string) {
-  const raw = Buffer.from(b64, "base64");
-  const iv = raw.subarray(0, 12);
-  const tag = raw.subarray(12, 28);
-  const enc = raw.subarray(28);
-  const decipher = crypto.createDecipheriv("aes-256-gcm", key, iv);
+export function decrypt(packed: string): string {
+  const key = getKey();
+  const [ivB64, tagB64, ctB64] = packed.split(".");
+  const iv = B64(ivB64);
+  const tag = B64(tagB64);
+  const ct = B64(ctB64);
+  const decipher = require("crypto").createDecipheriv("aes-256-gcm", key, iv);
   decipher.setAuthTag(tag);
-  const dec = Buffer.concat([decipher.update(enc), decipher.final()]);
+  const dec = Buffer.concat([decipher.update(ct), decipher.final()]);
   return dec.toString("utf8");
 }
