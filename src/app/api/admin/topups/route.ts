@@ -13,7 +13,7 @@ export async function GET() {
   const items = await prisma.topup.findMany({
     orderBy: { createdAt: "desc" },
     include: { user: { select: { email: true } } },
-    take: 50,
+    take: 200,
   });
   return NextResponse.json({ items });
 }
