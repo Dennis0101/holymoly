@@ -11,6 +11,9 @@ const creds = z.object({
 });
 
 export const { auth, signIn, signOut, handlers } = NextAuth({
+  // ✅ 프록시/커스텀 도메인 환경에서 호스트 신뢰 (AUTH_TRUST_HOST=true 와 함께 안전)
+  trustHost: true,
+
   session: { strategy: "jwt" },
   pages: { signIn: "/login", error: "/login" },
   providers: [
@@ -55,5 +58,5 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
   },
 });
 
-// ✅ route.ts에서 바로 재노출할 수 있도록 추가
+// ✅ app/api/auth/[...nextauth]/route.ts 에서 재노출 가능하도록
 export const { GET, POST } = handlers;
