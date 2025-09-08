@@ -1,4 +1,4 @@
-import prisma from "@/lib/prisma";
+import prisma from "../../lib/prisma";
 import InventoryUploader from "./uploader";
 
 export default async function InventoryPage() {
