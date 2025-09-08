@@ -1,6 +1,8 @@
 "use client";
-import { useEffect, useState } from "react";
+
 export const revalidate = 0; // 항상 최신 데이터
+
+import { useEffect, useState } from "react";
 type Row = {
   id: string; status: string; price: number; createdAt: string;
   user: { email: string | null }, product: { name: string };
