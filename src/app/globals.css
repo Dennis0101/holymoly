@@ -2,5 +2,26 @@
 @tailwind components;
 @tailwind utilities;
 
-/* 여기에 전역 스타일 필요하면 추가 */
-html, body { height: 100%; }
+/* 기본 바탕 */
+html, body {
+  height: 100%;
+}
+
+/* 폰트 스무딩 & 배경 */
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* 카드/버튼 등 자주 쓰는 유틸 (선택) */
+@layer components {
+  .card {
+    @apply rounded-lg border bg-white p-4 shadow-sm;
+  }
+  .btn-primary {
+    @apply inline-flex items-center justify-center rounded-md bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700 disabled:opacity-60;
+  }
+  .input {
+    @apply w-full rounded-md border px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500;
+  }
+}
