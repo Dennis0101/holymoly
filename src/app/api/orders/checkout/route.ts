@@ -1,14 +1,15 @@
+// src/app/api/orders/checkout/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "../../../../lib/auth";
+import { auth } from "../../../../lib/auth";                     // ✅ v5: auth()
 import prisma from "../../../../lib/prisma";
 import { sendDiscordPurchaseLog } from "../../../../lib/discord";
 
 export async function POST(req: NextRequest) {
-  const session = await getServerSession(authOptions);
+  const session = await auth();                                  // ✅ getServerSession → auth()
   if (!session?.user) {
     return NextResponse.json({ error: "UNAUTH" }, { status: 401 });
   }
+
   const { productId } = await req.json();
 
   try {
@@ -44,10 +45,12 @@ export async function POST(req: NextRequest) {
           order: { connect: { id: order.id } },
         },
       });
+
       await tx.user.update({
         where: { id: user.id },
         data: { balance: { decrement: product.price } },
       });
+
       const final = await tx.order.update({
         where: { id: order.id },
         data: { accountId: account.id, status: "FULFILLED" },
@@ -57,6 +60,7 @@ export async function POST(req: NextRequest) {
       return { order: final, user };
     });
 
+    // 디스코드 알림 (실패해도 주문은 성공 상태 유지)
     await sendDiscordPurchaseLog({
       userId: result.user.id,
       userEmail: result.user.email ?? undefined,
