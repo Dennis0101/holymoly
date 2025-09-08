@@ -1,0 +1,6 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 여기에 전역 스타일 필요하면 추가 */
+html, body { height: 100%; }
