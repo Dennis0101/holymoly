@@ -1,13 +1,18 @@
 import "./globals.css";
-import Providers from "./providers";
+import { Inter } from "next/font/google";
 
-export const metadata = { title: "Account Shop" };
+const inter = Inter({ subsets: ["latin"] });
+
+export const metadata = {
+  title: "Account Shop",
+  description: "계정 판매 사이트",
+};
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="ko">
-      <body>
-        <Providers>{children}</Providers>
+      <body className={`${inter.className} min-h-screen bg-gray-50 text-gray-900`}>
+        {children}
       </body>
     </html>
   );
