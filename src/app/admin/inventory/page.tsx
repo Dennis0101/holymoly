@@ -1,3 +1,4 @@
+export const revalidate = 0; // 또는: export const dynamic = "force-dynamic";
 import prisma from "../../../lib/prisma";
 import InventoryUploader from "./uploader";
 
