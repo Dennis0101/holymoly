@@ -1,36 +1,34 @@
 "use client";
 import { useEffect, useState } from "react";
 
-export default function SettingsPage() {
+export default function AdminSettings() {
   const [url, setUrl] = useState("");
-  const [msg, setMsg] = useState("");
+  const [ok, setOk] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
       const r = await fetch("/api/admin/settings/webhook");
-      const j = await r.json();
-      setUrl(j.url || "");
+      const d = await r.json();
+      setUrl(d?.discordWebhookUrl || "");
     })();
   }, []);
 
-  const onSave = async () => {
-    setMsg("");
+  async function save() {
     const r = await fetch("/api/admin/settings/webhook", {
-      method: "POST",
-      headers: { "Content-Type":"application/json" },
-      body: JSON.stringify({ url })
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ discordWebhookUrl: url }),
     });
-    setMsg(r.ok ? "저장되었습니다." : "저장 실패");
-  };
+    setOk(r.ok ? "저장되었습니다." : "실패했습니다.");
+    setTimeout(() => setOk(null), 1500);
+  }
 
   return (
-    <div className="space-y-4 max-w-xl">
-      <h1 className="text-2xl font-semibold">설정</h1>
-      <label className="block text-sm font-medium">디스코드 웹훅 URL</label>
-      <input className="w-full border rounded p-2" placeholder="https://discord.com/api/webhooks/..."
-             value={url} onChange={e=>setUrl(e.target.value)} />
-      <button className="px-3 py-2 border rounded hover:bg-gray-50" onClick={onSave}>저장</button>
-      {msg && <div className="text-sm text-gray-600">{msg}</div>}
-    </div>
+    <section className="panel space-y-3">
+      <h2 className="font-display text-xl">설정</h2>
+      <label className="text-sm text-white/70">디스코드 구매 웹훅 URL</label>
+      <input className="input" value={url} onChange={(e)=>setUrl(e.target.value)} placeholder="https://discord.com/api/webhooks/..." />
+      <button className="btn-primary" onClick={save}>저장</button>
+      {ok && <div className="text-sm text-emerald-300">{ok}</div>}
+    </section>
   );
 }
