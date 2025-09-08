@@ -1,4 +1,4 @@
-import prisma from "@/lib/prisma";
+import prisma from "../../../lib/prisma";
 import ProductEditor from "./product-editor";
 
 export default async function AdminProductsPage() {
