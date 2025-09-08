@@ -1,6 +1,6 @@
-import Sidebar from "@/components/Sidebar";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import Sidebar from "../../components/Sidebar";
+import { authOptions } from "../../lib/auth";
 
 export default async function DashboardLayout({
   children,
