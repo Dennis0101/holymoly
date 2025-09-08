@@ -1,4 +1,4 @@
-import "./globals.css";
+import "@/styles/globals.css"; // 또는 app/globals.css면 "./globals.css"
 import Providers from "./providers";
 
 export const metadata = { title: "Account Shop" };
