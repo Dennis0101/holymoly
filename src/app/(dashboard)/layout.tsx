@@ -1,6 +1,7 @@
 // 상단 import 바꾸기
-import Sidebar from "../../../components/Sidebar";
-import { auth } from "../../../lib/auth";
+// 잘못된 값: '../../../components/Sidebar', '../../../lib/auth'
+import Sidebar from "../../components/Sidebar";  // ✅ src/app/(dashboard) → src/components
+import { auth } from "../../lib/auth";          // ✅ src/app/(dashboard) → src/lib
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();           // ✅ getServerSession → auth()
