@@ -45,6 +45,7 @@ model Product {
   price       Int
   isActive    Boolean  @default(true)
   accounts    Account[]
+  orders      Order[]     // ← 추가: Product ↔ Order 역방향
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
@@ -58,6 +59,7 @@ model Account {
   isAllocated   Boolean  @default(false)
   allocatedAt   DateTime?
   allocatedToId String?
+  order         Order?     // ← 추가: Account ↔ Order 역방향 (1:1)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -76,6 +78,9 @@ model Order {
   account     Account?    @relation(fields: [accountId], references: [id])
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
+
+  // (선택) 하나의 Account가 여러 주문에 중복 연결되지 않도록 보장
+  @@unique([accountId])
 }
 
 model Topup {
