@@ -1,4 +1,5 @@
 // src/app/admin/products/page.tsx
+export const revalidate = 0; // 항상 최신 데이터
 export const dynamic = "force-dynamic"; // 매 요청 새로
 import prisma from "@/lib/prisma";
 import ProductRow from "./product-row";
