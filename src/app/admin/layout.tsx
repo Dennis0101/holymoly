@@ -1,4 +1,5 @@
-import { auth } from "../../../lib/auth";
+// 잘못된 값: '../../../lib/auth'
+import { auth } from "../../lib/auth";          // ✅ src/app/admin → src/lib
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();           // ✅
